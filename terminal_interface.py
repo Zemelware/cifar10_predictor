@@ -1,4 +1,3 @@
-import numpy as np
 import classifier
 
 print("Welcome! This is an AI trained on the CIFAR10 dataset. You can classify images in any of the following categories:")
@@ -17,6 +16,6 @@ prediction = sorted(prediction, reverse=True)
 print("\n--------------------------------------------")
 print("Here are the probabilities for each class:")
 for i in range(len(prediction)):
+    if i == 0: print('\033[92m', end='')  # Print the prediction in green
     print(f"{classifier.classes[i]}: {'{:.2%}'.format(prediction[i])}")
-
-print("The AI predicts that this image is a(n)", classifier.classes[np.argmax(prediction)] + '.')
+    if i == 0: print('\033[0m', end='')
