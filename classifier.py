@@ -1,3 +1,7 @@
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress annoying TensorFlow warnings
+
 from PIL import Image, UnidentifiedImageError
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
