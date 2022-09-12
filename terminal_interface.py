@@ -1,4 +1,3 @@
-import numpy as np
 import classifier
 
 print("Welcome! This is an AI trained on the CIFAR10 dataset. You can classify images in any of the following categories:")
