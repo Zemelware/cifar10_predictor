@@ -23,7 +23,8 @@ def predict_image(img, return_probabilities=False):
     if not return_probabilities:
         return prediction
     else:
-        return probabilities.tolist()[0]
+        # Return a dictionary of class: probability pairs
+        return {classes[i]: probabilities[0][i] for i in range(len(classes))}
 
 
 def plot_sample(x, y, index, show_prediction=False):
@@ -38,7 +39,7 @@ def plot_sample(x, y, index, show_prediction=False):
 
 def load_image(path):
     try:
-        img = Image.open(path).resize((32, 32), Image.ANTIALIAS)
+        img = Image.open(path).convert('RGB').resize((32, 32), Image.ANTIALIAS)
     except UnidentifiedImageError:
         raise Exception("The image could not be loaded. Are you sure this is an image file?")
 
@@ -75,3 +76,6 @@ cnn = models.load_model("cifar10_cnn.h5")
 
 # Save the model
 # cnn.save("cifar10_cnn.h5")
+
+# TODO: Improve the accuracy of the model
+# TODO: Modify hyperparameters
