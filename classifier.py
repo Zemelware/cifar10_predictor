@@ -32,12 +32,10 @@ def plot_sample(x, y, index, show_prediction=False):
     plt.show()
 
 
-# Load the image at the path then return an array of the image
-def load_img(path):
+def load_image(path):
     img = Image.open(path).resize((32, 32), Image.ANTIALIAS)
     img = np.array(img)
     img = img / 255
-    # img = np.expand_dims(img, axis=0)
     return img
 
 
