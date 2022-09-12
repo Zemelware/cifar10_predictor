@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,7 +33,11 @@ def plot_sample(x, y, index, show_prediction=False):
 
 
 def load_image(path):
-    img = Image.open(path).resize((32, 32), Image.ANTIALIAS)
+    try:
+        img = Image.open(path).resize((32, 32), Image.ANTIALIAS)
+    except UnidentifiedImageError:
+        raise Exception("The image could not be loaded. Are you sure this is an image file?")
+
     img = np.array(img)
     img = img / 255
     return img
