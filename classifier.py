@@ -1,4 +1,4 @@
-import tensorflow as tf
+from PIL import Image
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,16 +12,33 @@ classes = ["airplane", "automobile", "bird", "cat",
            "deer", "dog", "frog", "horse", "ship", "truck"]
 
 
+def predict_image(img, return_probabilities=False):
+    predict_img = np.expand_dims(img, axis=0)
+    probabilities = cnn.predict(predict_img)
+    prediction = classes[np.argmax(probabilities[0])]
+    if not return_probabilities:
+        return prediction
+    else:
+        return probabilities.tolist()[0]
+
+
 def plot_sample(x, y, index, show_prediction=False):
     if show_prediction:
-        predict_img = np.expand_dims(X_train[index], axis=0)
-        prediction = cnn.predict(predict_img)
-        class_prediction = classes[np.argmax(prediction[0])]
-        plt.title(f"Prediction: {class_prediction}")
+        prediction = predict_image(x[index])
+        plt.title(f"Prediction: {prediction}")
 
     plt.imshow(x[index])
     plt.xlabel(f"Label: {classes[y[index]]}")
     plt.show()
+
+
+# Load the image at the path then return an array of the image
+def load_img(path):
+    img = Image.open(path).resize((32, 32), Image.ANTIALIAS)
+    img = np.array(img)
+    img = img / 255
+    # img = np.expand_dims(img, axis=0)
+    return img
 
 
 cnn = models.Sequential([
