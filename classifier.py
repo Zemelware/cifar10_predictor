@@ -1,24 +1,25 @@
 import os
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress annoying TensorFlow warnings
-
-from PIL import Image, UnidentifiedImageError
-from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, UnidentifiedImageError
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models, optimizers
 
-(X_train, y_train), (X_test, y_test) = datasets.cifar10.load_data()
-X_train = X_train / 255
-X_test = X_test / 255
-y_train = y_train.reshape(-1, )  # Convert to 1-dimensional array
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress annoying TensorFlow warnings
 
-classes = ["airplane", "automobile", "bird", "cat",
-           "deer", "dog", "frog", "horse", "ship", "truck"]
+
+def preprocess_data():
+    (X_train, y_train), (X_test, y_test) = datasets.cifar10.load_data()
+    X_train = X_train / 255
+    X_test = X_test / 255
+    y_train = y_train.reshape(-1, )  # Convert to 1-dimensional array
+    return X_train, y_train, X_test, y_test
 
 
 def predict_image(img, return_probabilities=False):
     predict_img = np.expand_dims(img, axis=0)
-    probabilities = cnn.predict(predict_img)
+    probabilities = model.predict(predict_img)
     prediction = classes[np.argmax(probabilities[0])]
     if not return_probabilities:
         return prediction
@@ -37,6 +38,26 @@ def plot_sample(x, y, index, show_prediction=False):
     plt.show()
 
 
+def plot_accuracy(model_history):
+    plt.plot(model_history.history['accuracy'], label='Train')
+    plt.plot(model_history.history["val_accuracy"], label="Validation")
+    plt.title("Model Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend(loc="lower right")
+    plt.show()
+
+
+def plot_loss(model_history):
+    plt.plot(model_history.history['loss'], label='Training')
+    plt.plot(model_history.history["val_loss"], label="Validation")
+    plt.title("Model Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend(loc="upper right")
+    plt.show()
+
+
 def load_image(path):
     try:
         img = Image.open(path).convert('RGB').resize((32, 32), Image.ANTIALIAS)
@@ -48,34 +69,71 @@ def load_image(path):
     return img
 
 
-cnn = models.Sequential([
-    # CNN
-    layers.Conv2D(filters=32, kernel_size=(3, 3),
-                  activation='relu', input_shape=(32, 32, 3)),
-    layers.MaxPooling2D((2, 2)),
+def create_model(learning_rate, num_classes):
+    with tf.device('/CPU:0'):  # Fix M1 TensorFlow Metal bug
+        data_augmentation = models.Sequential([
+            layers.experimental.preprocessing.RandomFlip("horizontal", input_shape=(32, 32, 3)),
+            # layers.experimental.preprocessing.RandomRotation(0.1),
+            # layers.experimental.preprocessing.RandomZoom(0.1),
+            layers.experimental.preprocessing.RandomWidth(0.1),
+            layers.experimental.preprocessing.RandomHeight(0.1),
+        ])
 
-    layers.Conv2D(filters=32, kernel_size=(3, 3),
-                  activation='relu', input_shape=(32, 32, 3)),
-    layers.MaxPooling2D((2, 2)),
+    cnn = models.Sequential([
+        data_augmentation,
 
-    # Dense
-    layers.Flatten(),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(10, activation="softmax")
-])
+        # CNN
+        layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+        layers.BatchNormalization(),
+        layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.2),
 
-cnn.compile(optimizer="adam",
-            loss="sparse_categorical_crossentropy",
-            metrics=["accuracy"])
+        layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.3),
 
-# Load the model
-cnn = models.load_model("cifar10_cnn.h5")
+        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.4),
 
-# cnn.fit(X_train, y_train, epochs=10)
-# cnn.evaluate(X_test, y_test)
+        # Dense
+        # layers.Flatten(),
+        layers.GlobalMaxPool2D(),
+        layers.Dense(128, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+        layers.Dense(num_classes, activation="softmax")
+    ])
 
-# Save the model
-# cnn.save("cifar10_cnn.h5")
+    cnn.compile(optimizer=optimizers.Adam(learning_rate),
+                loss="sparse_categorical_crossentropy",
+                metrics=["accuracy"])
 
-# TODO: Improve the accuracy of the model
-# TODO: Modify hyperparameters
+    return cnn
+
+
+classes = ["airplane", "automobile", "bird", "cat",
+           "deer", "dog", "frog", "horse", "ship", "truck"]
+
+LEARNING_RATE = 0.001
+EPOCHS = 70
+BATCH_SIZE = 200
+
+model = models.load_model("cifar10_cnn.h5")
+
+if __name__ == "__main__":
+    X_train, y_train, X_test, y_test = preprocess_data()
+    model = create_model(LEARNING_RATE, len(classes))
+    history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_test, y_test), shuffle=True)
+    plot_accuracy(history)
+    plot_loss(history)
+    # model.evaluate(X_test, y_test)
+    model.save("cifar10_cnn.h5")
