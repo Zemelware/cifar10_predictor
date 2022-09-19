@@ -28,7 +28,7 @@ while True:
     prediction = sorted(prediction.items(), key=lambda x: x[1], reverse=True)
 
     print("\n--------------------------------------------")
-    print("Here are the probabilities for each class:")
+    print("Here are the AI's predictions:")
     for i, (category, probability) in enumerate(prediction):
         if i == 0: print('\033[92m', end='')  # Print the prediction in green
         print(f"{category}: {'{:.2%}'.format(probability)}")
@@ -40,5 +40,3 @@ while True:
         break
 
     first_time = False
-
-# TODO: Add a GUI to make this more user-friendly
