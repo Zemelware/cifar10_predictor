@@ -1,6 +1,18 @@
 import sys
 import classifier
 
+"""
+import gradio as gr
+
+
+def classify_image(image):
+    img = image / 255
+    return classifier.predict_image(img, return_probabilities=True)
+
+
+gr.Interface(fn=classify_image, inputs=gr.Image(shape=(32, 32)), outputs="label").launch()
+"""
+
 if len(sys.argv) > 2:
     print("\033[91mYou've entered too many arguments. Please try again, with one argument as the filepath to the image "
           "you would like the AI to classify.\033[0m")
