@@ -10,6 +10,7 @@ def classify_image(image):
     return classifier.predict_image(img, return_probabilities=True)
 
 
+# Gradio provides a web-based interface to test the model
 gr.Interface(fn=classify_image, inputs=gr.Image(shape=(32, 32)), outputs="label").launch()
 """
 
