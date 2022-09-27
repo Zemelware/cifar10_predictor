@@ -19,7 +19,7 @@ def preprocess_data():
 
 def predict_image(img, return_probabilities=False):
     predict_img = np.expand_dims(img, axis=0)
-    probabilities = model.predict(predict_img)
+    probabilities = model.predict(predict_img).tolist()
     prediction = classes[np.argmax(probabilities[0])]
     if not return_probabilities:
         return prediction
@@ -127,13 +127,35 @@ LEARNING_RATE = 0.001
 EPOCHS = 70
 BATCH_SIZE = 200
 
-model = models.load_model("cifar10_cnn.h5")
+training_num = 1
+while os.path.exists(f"weights/training_{training_num}"):
+    training_num += 1
+checkpoint_dir = f"weights/training_{training_num}"
+checkpoint_path = checkpoint_dir + "/cp-{epoch:03d}-{val_accuracy:.03f}.ckpt"
+
+model = create_model(LEARNING_RATE, len(classes))
+if os.path.exists(checkpoint_dir):
+    latest = tf.train.latest_checkpoint(checkpoint_dir)
+    model.load_weights(latest)
 
 if __name__ == "__main__":
+    # Create a callback that saves the model's best weights
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                     monitor='val_accuracy',
+                                                     save_best_only=True,
+                                                     save_weights_only=True,
+                                                     mode='max')
+
+    # Create an early stopping callback
+    es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                   min_delta=0.001,
+                                                   patience=10,
+                                                   mode='min')
+
     X_train, y_train, X_test, y_test = preprocess_data()
-    model = create_model(LEARNING_RATE, len(classes))
-    history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_test, y_test), shuffle=True)
+
+    history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+                        validation_data=(X_test, y_test), shuffle=True, callbacks=[cp_callback, es_callback])
     plot_accuracy(history)
     plot_loss(history)
-    # model.evaluate(X_test, y_test)
-    model.save("cifar10_cnn.h5")
+    model.evaluate(X_test, y_test)
