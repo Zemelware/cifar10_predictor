@@ -81,9 +81,9 @@ def create_model(learning_rate, num_classes):
         data_augmentation,
 
         # CNN
-        layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+        layers.Conv2D(filters=48, kernel_size=(3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
         layers.BatchNormalization(),
-        layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
+        layers.Conv2D(filters=48, kernel_size=(3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
         layers.MaxPooling2D((2, 2)),
         layers.Dropout(0.2),
@@ -125,7 +125,7 @@ LEARNING_RATE = 0.001
 EPOCHS = 1000
 BATCH_SIZE = 200
 
-weights_path = "best_weights/best_weights.ckpt"
+weights_path = "model_weights/best_weights.ckpt"
 weights_dir = os.path.dirname(weights_path)
 
 model = create_model(LEARNING_RATE, len(classes))
